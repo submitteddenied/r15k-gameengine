@@ -1,0 +1,25 @@
+{
+  "name": "r15k-gameengine",
+  "version": "0.1.0",
+  "description": "The game engine for R15k",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/submitteddenied/r15k-gameengine.git"
+  },
+  "author": "Michael Jensen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/submitteddenied/r15k-gameengine/issues"
+  },
+  "homepage": "https://github.com/submitteddenied/r15k-gameengine#readme",
+  "devDependencies": {
+    "jest": "^25.2.7"
+  },
+  "dependencies": {
+    "javascript-state-machine": "^3.1.0"
+  }
+}
