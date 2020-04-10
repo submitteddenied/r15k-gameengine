@@ -4,7 +4,8 @@
   "description": "The game engine for R15k",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch --coverage"
   },
   "repository": {
     "type": "git",

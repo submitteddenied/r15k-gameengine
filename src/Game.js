@@ -1,4 +1,6 @@
 const StateMachine = require('javascript-state-machine')
+const OutOfTurnError = require('./errors/OutOfTurnError')
+const UnavailableNodeError = require('./errors/UnavailableNodeError')
 
 const GAME_STATES = {
   'READY': Symbol('READY'),
@@ -35,25 +37,24 @@ class Game {
     this.players = players
     this.map = map
     this.fsm = new StateMachine(STATES)
-    // TODO Wire up state transitions to methods in this instance
+    
+    this.fsm.observe('onStart', () => this.setTurnOrder())
+    this.fsm.observe('onCompleteDeployment', () => this.turnIndex = 0)
+
     this.die = die
     this.turnIndex = 0
-    this.turnPhase = undefined
     this.log = [{
       type: 'created',
       time: new Date().getTime()
     }]
   }
 
-  startGame() {
-    if(this.state === GAME_STATES.READY) {
-      this.state = GAME_STATES.DEPLOYMENT
-      this.setTurnOrder()
-    }
+  incrementTurnIndex() {
+    this.turnIndex = (this.turnIndex + 1) % this.players.length
   }
 
-  getMap() {
-    return this.map
+  start() {
+    this.fsm.start()
   }
 
   setTurnOrder() {
@@ -70,8 +71,52 @@ class Game {
     this.players = rolls.map(i => i.player)
   }
 
-  getAvailableActions(player) {
+  isPlayersTurn(playerName) {
+    return this.players[this.turnIndex] === playerName
+  }
 
+  getActionsForPlayer(playerName) {
+    switch(this.fsm.state) {
+      case 'deployment':
+        return this.deploymentActions(playerName)
+    }
+  }
+
+  deploymentActions(playerName) {
+    //if it's my turn, list the available map nodes that can be claimed
+    // if not, no available actions
+    if(this.isPlayersTurn(playerName)) {  
+      return this.map.getUnownedNodes().map((nodeName) => ({
+        type: 'deploy',
+        mapNode: nodeName
+      }))
+    } else {
+      return []
+    }
+  }
+
+  takeAction(playerName, action) {
+    switch(action.type) {
+      case 'deploy':
+        return this.doDeploymentAction(playerName, action)
+    }
+  }
+
+  doDeploymentAction(playerName, action) {
+    if(this.isPlayersTurn(playerName)) {
+      const available = this.map.getUnownedNodes().includes(action.mapNode)
+      if(!available) {
+        throw new UnavailableNodeError('This node is not available to be claimed')
+      }
+      this.map.claim(action.mapNode, playerName, 1)
+      this.incrementTurnIndex()
+
+      if(this.map.getUnownedNodes().length === 0) {
+        this.fsm.completeDeployment()
+      }
+    } else {
+      throw new OutOfTurnError('Not allowed to deploy now!')
+    }
   }
 }
 
